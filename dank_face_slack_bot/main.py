@@ -1,11 +1,17 @@
 import logging
 import os
+from typing import Any
 
 import httpx
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from path import Path
+from pydantic import ValidationError
 from slack_bolt import App
 from slack_bolt.adapter.fastapi import SlackRequestHandler
+from slack_bolt.context.ack import Ack
+from slack_sdk import WebClient
+
+from dank_face_slack_bot.models import Event
 
 # from slack_bolt.oauth.oauth_settings import OAuthSettings
 # from slack_sdk.oauth.installation_store import FileInstallationStore
@@ -17,7 +23,7 @@ FUZZY_OCTO_DISCO_TIMEOUT_SECONDS = int(
 )
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 
-
+# TODO: use oauth everywhere
 # oauth_settings = OAuthSettings(
 #     client_id=os.environ.get("SLACK_CLIENT_ID"),
 #     client_secret=os.environ.get("SLACK_CLIENT_SECRET"),
@@ -34,26 +40,44 @@ SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 
 app = App(token=SLACK_BOT_TOKEN, signing_secret=os.environ.get("SLACK_SIGNING_SECRET"))
 app_handler = SlackRequestHandler(app)
-logging.basicConfig(level=logging.DEBUG)
+
+LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(level=LOG_LEVEL)
+
+# TODO: add global error handler
 
 
 # @app.event("file_shared")
 @app.event({"type": "message", "subtype": "file_share"})
-def handle_file_shared_events(ack, client, event, logger):
+# See https://github.com/slackapi/bolt-python/blob/main/slack_bolt/kwargs_injection/args.py for typing
+def handle_file_shared_events(
+    ack: Ack, client: WebClient, event: dict[str, Any] | None, logger: logging.Logger
+) -> None:
     logger.info(event)
+
+    try:
+        e = Event.parse_obj(event)
+    except ValidationError as error:
+        logger.error(f"Failed to parse event: {error}")
+        return
+
     ack()
-    for file in event.get("files"):
-        if file.get("filetype") not in ("jpg", "png", "webm", "gif"):
+    for file in e.files:
+        # TODO: actually webp file can have png extension
+        if file.filetype not in ("jpg", "png", "webm", "gif"):
             logger.info("File is not an image")
             # TODO: add a fail/sad emoji reaction
             return
 
+        # TODO: handle error when downloading the file
         # download the file with a stream via httpx
-        file_path = f"/tmp/{file.get('id')}.{file.get('filetype')}"
-        file_path = "/tmp/test.png"
+        file_path = f"/tmp/{file.id}.{file.filetype}"
+
+        # TODO: use stream to avoid loading the whole file in memory
         with open(file_path, "wb") as f:
             res = httpx.get(
-                file.get("url_private"),
+                file.url_private,
+                # TODO: how to get the token with oauth?
                 headers={"Authorization": f"Bearer {SLACK_BOT_TOKEN}"},
             )
             res.raise_for_status()
@@ -66,16 +90,19 @@ def handle_file_shared_events(ack, client, event, logger):
                 timeout=FUZZY_OCTO_DISCO_TIMEOUT_SECONDS,
             )
             res.raise_for_status()
+            # TODO: use a schema to validate the response, such as pydantic
             result = res.json()
             if result.get("status") == "SUCCESS":
                 logger.info(
                     f"Found {result.get('nbFaces')} faces sening on channel {event.get('channel')} and thread {event.get('event_ts')}"
                 )
+                # TODO use an emoji reaction instead
                 client.chat_postMessage(
                     text=f"Found {result.get('nbFaces')}",
                     channel=event.get("channel"),
                     thread_ts=event.get("event_ts"),
                 )
+                # TODO: send photos as an album
                 for i in range(int(result.get("nbFaces"))):
                     result_path = result.get("paths")[i]
                     try:
@@ -100,6 +127,7 @@ def handle_file_shared_events(ack, client, event, logger):
                 logger.info("No faces found")
                 # TODO: add a fail/sad emoji reaction
             else:
+                # TODO: add a fail emoji reaction
                 logger.error(
                     f"Received {result['status']} from fuzzy-octo-disco: {result['message']}"
                 )
@@ -107,35 +135,34 @@ def handle_file_shared_events(ack, client, event, logger):
             logger.error(
                 f"An error occurred while requesting {exc.request.url!r}: {exc}"
             )
+            # TODO: add a fail emoji reaction
         finally:
             # TODO: remove the file
+            try:
+                Path(file_path).remove_p()
+            except Exception as error:
+                logger.warning(f"Failed to remove the original file: {error}")
             pass
-
-
-# @app.event("message")
-# def handle_message_events(event, body, logger):
-#     logger.info(event)
-#     logger.info(body)
 
 
 api = FastAPI()
 
 
 @api.post("/slack/events")
-async def endpoint(req: Request):
+async def endpoint(req: Request) -> Response:
     return await app_handler.handle(req)
 
 
 @api.get("/slack/install")
-async def install(req: Request):
+async def install(req: Request) -> Response:
     return await app_handler.handle(req)
 
 
 @api.get("/slack/oauth_redirect")
-async def oauth_redirect(req: Request):
+async def oauth_redirect(req: Request) -> Response:
     return await app_handler.handle(req)
 
 
 @api.get("/health")
-async def get_health():
+async def get_health() -> dict[str, str]:
     return {"message": "OK"}
