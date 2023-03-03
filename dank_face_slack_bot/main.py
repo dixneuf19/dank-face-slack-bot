@@ -11,7 +11,7 @@ from slack_bolt.adapter.fastapi import SlackRequestHandler
 from slack_bolt.context.ack import Ack
 from slack_sdk import WebClient
 
-from dank_face_slack_bot.models import Event
+from dank_face_slack_bot.models import Event, FuzzyOctoDiscoResponse
 
 # from slack_bolt.oauth.oauth_settings import OAuthSettings
 # from slack_sdk.oauth.installation_store import FileInstallationStore
@@ -91,26 +91,31 @@ def handle_file_shared_events(
             )
             res.raise_for_status()
             # TODO: use a schema to validate the response, such as pydantic
-            result = res.json()
-            if result.get("status") == "SUCCESS":
-                logger.info(
-                    f"Found {result.get('nbFaces')} faces sening on channel {event.get('channel')} and thread {event.get('event_ts')}"
+            try:
+                result = FuzzyOctoDiscoResponse.parse_obj(res.json())
+            except ValidationError as error:
+                logger.error(f"Failed to parse fuzzy-octo-disco response: {error}")
+                raise error
+
+            if result.status == "SUCCESS":
+                logger.debug(
+                    f"Found {result.nbFaces} faces. Sending on channel {e.channel} and thread {e.event_ts}"
                 )
                 # TODO use an emoji reaction instead
                 client.chat_postMessage(
-                    text=f"Found {result.get('nbFaces')}",
-                    channel=event.get("channel"),
-                    thread_ts=event.get("event_ts"),
+                    text=f"Found {result.nbFaces}",
+                    channel=e.channel,
+                    thread_ts=e.event_ts,
                 )
                 # TODO: send photos as an album
-                for i in range(int(result.get("nbFaces"))):
-                    result_path = result.get("paths")[i]
+                for i in range(int(result.nbFaces)):
+                    result_path = result.paths[i]
                     try:
                         pass
                         client.files_upload_v2(
                             file=result_path,
-                            channel=event.get("channel"),
-                            thread_ts=event.get("event_ts"),
+                            channel=e.channel,
+                            thread_ts=e.event_ts,
                         )
                     except Exception as error:
                         logger.warning(f"Failed to send face {i}: {error}")
@@ -118,18 +123,18 @@ def handle_file_shared_events(
                     finally:
                         try:
                             # Remove the file
-                            Path(result["paths"][i]).remove_p()
+                            Path(result.paths[i]).remove_p()
                         except Exception as error:
                             logger.warning(f"Failed to remove face {i}: {error}")
                             pass
 
-            elif result["status"] in ("NO_FACE_FOUND", "FAILED_ALL_FACES"):
+            elif result.status in ("NO_FACE_FOUND", "FAILED_ALL_FACES"):
                 logger.info("No faces found")
                 # TODO: add a fail/sad emoji reaction
             else:
                 # TODO: add a fail emoji reaction
                 logger.error(
-                    f"Received {result['status']} from fuzzy-octo-disco: {result['message']}"
+                    f"Received {result.status} from fuzzy-octo-disco: {result.message}"
                 )
         except httpx.RequestError as exc:
             logger.error(

@@ -11,3 +11,10 @@ class Event(BaseModel):
     channel: str
     files: list[File]
     event_ts: str
+
+
+class FuzzyOctoDiscoResponse(BaseModel):
+    status: str
+    nbFaces: int
+    paths: list[str]
+    message: str
