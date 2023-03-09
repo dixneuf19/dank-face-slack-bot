@@ -7,7 +7,7 @@ authors = ["Julen Dixneuf <julend@padok.fr>"]
 [tool.poetry.dependencies]
 python = "^3.11"
 fastapi = "==0.93.0"
-uvicorn = "==0.20.0"
+uvicorn = "==0.21.0"
 slack-bolt = "^1.16.2"
 httpx = "^0.23.3"
 path-py = "^12.5.0"
