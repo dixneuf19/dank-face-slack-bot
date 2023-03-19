@@ -6,7 +6,7 @@ authors = ["Julen Dixneuf <julend@padok.fr>"]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-fastapi = "==0.94.1"
+fastapi = "==0.95.0"
 uvicorn = "==0.21.1"
 slack-bolt = "^1.16.2"
 httpx = "^0.23.3"
