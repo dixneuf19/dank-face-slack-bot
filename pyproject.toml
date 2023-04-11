@@ -9,7 +9,7 @@ python = "^3.11"
 fastapi = "==0.95.0"
 uvicorn = "==0.21.1"
 slack-bolt = "^1.16.2"
-httpx = "^0.23.3"
+httpx = "^0.24.0"
 path-py = "^12.5.0"
 ruff = "^0.0.261"
 
@@ -21,7 +21,7 @@ pre-commit = "==3.2.2"
 pytest-cov = "==4.0.0"
 pytest-mock = "==3.10.0"
 mypy = "==1.2.0"
-httpx = "==0.23.3"
+httpx = "==0.24.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
