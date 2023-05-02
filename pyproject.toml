@@ -11,7 +11,7 @@ uvicorn = "==0.22.0"
 slack-bolt = "^1.16.2"
 httpx = "^0.24.0"
 path-py = "^12.5.0"
-ruff = "^0.0.263"
+ruff = "^0.0.264"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "==7.3.1"
