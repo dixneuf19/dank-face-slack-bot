@@ -46,6 +46,10 @@ logging.basicConfig(level=LOG_LEVEL)
 
 # TODO: add global error handler
 
+ERROR_EMOJI = "face_with_head_bandage"
+NOTHING_FOUND_EMOJI = "face_with_monocle"
+SUCCESS_EMOJI = "smiling_face_with_3_hearts"
+
 
 @app.event({"type": "message", "subtype": "file_share"})
 # See https://github.com/slackapi/bolt-python/blob/main/slack_bolt/kwargs_injection/args.py for typing
@@ -63,7 +67,11 @@ def handle_file_shared_events(
         # TODO: actually webp file can have png extension
         if file.filetype not in ("jpg", "png", "webm", "gif"):
             logger.info("File is not an image")
-            # TODO: add a fail/sad emoji reaction
+            client.reactions_add(
+                name=ERROR_EMOJI,
+                channel=e.channel,
+                timestamp=e.event_ts,
+            )
             return
 
         # TODO: handle error when downloading the file
@@ -97,11 +105,10 @@ def handle_file_shared_events(
                 logger.debug(
                     f"Found {result.nbFaces} faces. Sending on channel {e.channel} and thread {e.event_ts}"
                 )
-                # TODO use an emoji reaction instead
-                client.chat_postMessage(
-                    text=f"Found {result.nbFaces}",
+                client.reactions_add(
+                    name=SUCCESS_EMOJI,
                     channel=e.channel,
-                    thread_ts=e.event_ts,
+                    timestamp=e.event_ts,
                 )
                 uploads = []
                 for i in range(int(result.nbFaces)):
@@ -114,7 +121,8 @@ def handle_file_shared_events(
                     finally:
                         try:
                             # Remove the file
-                            Path(result.paths[i]).remove_p()
+                            # Path(result.paths[i]).remove_p()
+                            pass
                         except Exception as error:
                             logger.warning(f"Failed to remove face {i}: {error}")
                             pass
@@ -130,9 +138,17 @@ def handle_file_shared_events(
 
             elif result.status in ("NO_FACE_FOUND", "FAILED_ALL_FACES"):
                 logger.info("No faces found")
-                # TODO: add a fail/sad emoji reaction
+                client.reactions_add(
+                    name=NOTHING_FOUND_EMOJI,
+                    channel=e.channel,
+                    timestamp=e.event_ts,
+                )
             else:
-                # TODO: add a fail emoji reaction
+                client.reactions_add(
+                    name=ERROR_EMOJI,
+                    channel=e.channel,
+                    timestamp=e.event_ts,
+                )
                 logger.error(
                     f"Received {result.status} from fuzzy-octo-disco: {result.message}"
                 )
@@ -140,7 +156,11 @@ def handle_file_shared_events(
             logger.error(
                 f"An error occurred while requesting {exc.request.url!r}: {exc}"
             )
-            # TODO: add a fail emoji reaction
+            client.reactions_add(
+                name=ERROR_EMOJI,
+                channel=e.channel,
+                timestamp=e.event_ts,
+            )
         finally:
             try:
                 Path(file_path).remove_p()
