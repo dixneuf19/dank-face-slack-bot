@@ -15,6 +15,6 @@ class Event(BaseModel):
 
 class FuzzyOctoDiscoResponse(BaseModel):
     status: str
-    nbFaces: int
-    paths: list[str]
-    message: str
+    nbFaces: int = 0
+    paths: list[str] = []
+    message: str = ""

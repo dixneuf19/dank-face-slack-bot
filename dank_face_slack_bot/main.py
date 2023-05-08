@@ -47,14 +47,11 @@ logging.basicConfig(level=LOG_LEVEL)
 # TODO: add global error handler
 
 
-# @app.event("file_shared")
 @app.event({"type": "message", "subtype": "file_share"})
 # See https://github.com/slackapi/bolt-python/blob/main/slack_bolt/kwargs_injection/args.py for typing
 def handle_file_shared_events(
     ack: Ack, client: WebClient, event: dict[str, Any] | None, logger: logging.Logger
 ) -> None:
-    logger.info(event)
-
     try:
         e = Event.parse_obj(event)
     except ValidationError as error:
@@ -90,7 +87,6 @@ def handle_file_shared_events(
                 timeout=FUZZY_OCTO_DISCO_TIMEOUT_SECONDS,
             )
             res.raise_for_status()
-            # TODO: use a schema to validate the response, such as pydantic
             try:
                 result = FuzzyOctoDiscoResponse.parse_obj(res.json())
             except ValidationError as error:
@@ -107,18 +103,13 @@ def handle_file_shared_events(
                     channel=e.channel,
                     thread_ts=e.event_ts,
                 )
-                # TODO: send photos as an album
+                uploads = []
                 for i in range(int(result.nbFaces)):
                     result_path = result.paths[i]
                     try:
-                        pass
-                        client.files_upload_v2(
-                            file=result_path,
-                            channel=e.channel,
-                            thread_ts=e.event_ts,
-                        )
+                        uploads.append(client.files_upload_v2(file=result_path))
                     except Exception as error:
-                        logger.warning(f"Failed to send face {i}: {error}")
+                        logger.warning(f"Failed to upload face {i}: {error}")
                         pass
                     finally:
                         try:
@@ -127,6 +118,15 @@ def handle_file_shared_events(
                         except Exception as error:
                             logger.warning(f"Failed to remove face {i}: {error}")
                             pass
+                # TODO: handle all uploads failed
+                msg = "".join(
+                    [f"<{upload['file']['permalink']}| >" for upload in uploads]
+                )
+                client.chat_postMessage(
+                    text=msg,
+                    channel=e.channel,
+                    thread_ts=e.event_ts,
+                )
 
             elif result.status in ("NO_FACE_FOUND", "FAILED_ALL_FACES"):
                 logger.info("No faces found")
@@ -142,7 +142,6 @@ def handle_file_shared_events(
             )
             # TODO: add a fail emoji reaction
         finally:
-            # TODO: remove the file
             try:
                 Path(file_path).remove_p()
             except Exception as error:
