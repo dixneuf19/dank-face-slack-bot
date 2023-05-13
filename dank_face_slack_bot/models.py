@@ -4,7 +4,7 @@ from pydantic import BaseModel
 class File(BaseModel):
     id: str
     filetype: str
-    url_private: str
+    url_private_download: str
 
 
 class Event(BaseModel):
