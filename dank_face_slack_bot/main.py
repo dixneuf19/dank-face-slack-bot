@@ -60,6 +60,7 @@ else:
         signing_secret=os.environ.get("SLACK_SIGNING_SECRET"),
         oauth_settings=oauth_settings,
     )
+    app.enable_token_revocation_listeners()  # https://github.com/slackapi/python-slack-sdk/pull/995
 
 app_handler = SlackRequestHandler(app)
 
