@@ -97,6 +97,7 @@ def handle_file_shared_events(
                 file.url_private,
                 # TODO: how to get the token with oauth?
                 headers={"Authorization": f"Bearer {SLACK_BOT_TOKEN}"},
+                follow_redirects=True,
             )
             res.raise_for_status()
             f.write(res.content)
