@@ -96,7 +96,7 @@ def handle_file_shared_events(
         # TODO: use stream to avoid loading the whole file in memory
         with open(file_path, "wb") as f:
             res = httpx.get(
-                file.url_private,
+                file.url_private_download,
                 # TODO: how to get the token with oauth?
                 headers={"Authorization": f"Bearer {SLACK_BOT_TOKEN}"},
                 follow_redirects=True,
@@ -179,7 +179,8 @@ def handle_file_shared_events(
             )
         finally:
             try:
-                Path(file_path).remove_p()
+                # Path(file_path).remove_p()
+                pass
             except Exception as error:
                 logger.warning(f"Failed to remove the original file: {error}")
             pass
