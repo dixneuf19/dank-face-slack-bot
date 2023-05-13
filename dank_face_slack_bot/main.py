@@ -92,13 +92,13 @@ def handle_file_shared_events(
         # TODO: handle error when downloading the file
         # download the file with a stream via httpx
         file_path = f"{FIND_FACES_PIC_FOLDER}/{file.id}.{file.filetype}"
-
+        print(client.token)
         # TODO: use stream to avoid loading the whole file in memory
         with open(file_path, "wb") as f:
             res = httpx.get(
                 file.url_private_download,
                 # TODO: how to get the token with oauth?
-                headers={"Authorization": f"Bearer {SLACK_BOT_TOKEN}"},
+                headers={"Authorization": f"Bearer {client.token}"},
                 follow_redirects=True,
             )
             res.raise_for_status()
