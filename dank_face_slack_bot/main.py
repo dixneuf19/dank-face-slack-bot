@@ -71,6 +71,12 @@ NOTHING_FOUND_EMOJI = "face_with_monocle"
 SUCCESS_EMOJI = "smiling_face_with_3_hearts"
 
 
+@app.middleware  # or app.use(log_request)
+def log_request(logger, body, next):
+    logger.debug(body)
+    return next()
+
+
 @app.event({"type": "message", "subtype": "file_share"})
 # See https://github.com/slackapi/bolt-python/blob/main/slack_bolt/kwargs_injection/args.py for typing
 def handle_file_shared_events(
