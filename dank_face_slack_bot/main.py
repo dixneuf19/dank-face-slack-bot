@@ -138,7 +138,7 @@ def handle_file_shared_events(
                     finally:
                         try:
                             # Remove the file
-                            # Path(result.paths[i]).remove_p()
+                            Path(result.paths[i]).remove_p()
                             pass
                         except Exception as error:
                             logger.warning(f"Failed to remove face {i}: {error}")
