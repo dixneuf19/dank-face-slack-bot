@@ -52,6 +52,7 @@ else:
         state_store=FileOAuthStateStore(
             expiration_seconds=600, base_dir=f"{SLACK_OAUTH_CREDS_FOLDER}/states"
         ),
+        install_page_rendering_enabled=False,
     )
 
     # Initializes your app with your bot token and signing secret
