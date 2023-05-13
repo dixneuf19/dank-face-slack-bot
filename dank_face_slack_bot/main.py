@@ -38,8 +38,8 @@ else:
         client_secret=os.environ.get("SLACK_CLIENT_SECRET"),
         scopes=[
             "app_mentions:read",
-            "file:write",
-            "file:read",
+            "files:write",
+            "files:read",
             "reactions:write",
             "chat:write",
         ],
