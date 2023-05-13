@@ -45,9 +45,10 @@ else:
             "reactions:write",
             "chat:write",
         ],
-        installation_store=FileInstallationStore(base_dir="./data"),
-        state_store=FileOAuthStateStore(expiration_seconds=600, base_dir="./data"),
-        install_page_rendering_enabled=True,
+        installation_store=FileInstallationStore(base_dir="./data/installations"),
+        state_store=FileOAuthStateStore(
+            expiration_seconds=600, base_dir="./data/states"
+        ),
     )
 
     # Initializes your app with your bot token and signing secret
