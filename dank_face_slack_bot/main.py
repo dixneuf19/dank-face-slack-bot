@@ -23,6 +23,7 @@ FUZZY_OCTO_DISCO_TIMEOUT_SECONDS = int(
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 
 FIND_FACES_PIC_FOLDER = os.environ.get("FIND_FACES_PIC_FOLDER", default="/tmp")
+SLACK_OAUTH_CREDS_FOLDER = os.environ.get("SLACK_OAUTH_CREDS_FOLDER", default="./data")
 
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(level=LOG_LEVEL)
@@ -45,9 +46,11 @@ else:
             "reactions:write",
             "chat:write",
         ],
-        installation_store=FileInstallationStore(base_dir="./data/installations"),
+        installation_store=FileInstallationStore(
+            base_dir=f"{SLACK_OAUTH_CREDS_FOLDER}/installations"
+        ),
         state_store=FileOAuthStateStore(
-            expiration_seconds=600, base_dir="./data/states"
+            expiration_seconds=600, base_dir=f"{SLACK_OAUTH_CREDS_FOLDER}/states"
         ),
     )
 
