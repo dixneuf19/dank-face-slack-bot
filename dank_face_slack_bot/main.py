@@ -22,6 +22,8 @@ FUZZY_OCTO_DISCO_TIMEOUT_SECONDS = int(
 )
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 
+FIND_FACES_PIC_FOLDER = os.environ.get("FIND_FACES_PIC_FOLDER", default="/tmp")
+
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(level=LOG_LEVEL)
 
@@ -89,7 +91,7 @@ def handle_file_shared_events(
 
         # TODO: handle error when downloading the file
         # download the file with a stream via httpx
-        file_path = f"/tmp/{file.id}.{file.filetype}"
+        file_path = f"{FIND_FACES_PIC_FOLDER}/{file.id}.{file.filetype}"
 
         # TODO: use stream to avoid loading the whole file in memory
         with open(file_path, "wb") as f:
