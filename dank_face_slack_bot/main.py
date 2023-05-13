@@ -9,13 +9,12 @@ from pydantic import ValidationError
 from slack_bolt import App
 from slack_bolt.adapter.fastapi import SlackRequestHandler
 from slack_bolt.context.ack import Ack
+from slack_bolt.oauth.oauth_settings import OAuthSettings
 from slack_sdk import WebClient
+from slack_sdk.oauth.installation_store import FileInstallationStore
+from slack_sdk.oauth.state_store import FileOAuthStateStore
 
 from dank_face_slack_bot.models import Event, FuzzyOctoDiscoResponse
-
-# from slack_bolt.oauth.oauth_settings import OAuthSettings
-# from slack_sdk.oauth.installation_store import FileInstallationStore
-# from slack_sdk.oauth.state_store import FileOAuthStateStore
 
 FUZZY_OCTO_DISCO_ADDRESS = f'{os.getenv("FUZZY_OCTO_DISCO_HOST", default="http://localhost")}:{os.getenv("FUZZY_OCTO_DISCO_PORT", default="8080")}'
 FUZZY_OCTO_DISCO_TIMEOUT_SECONDS = int(
@@ -23,26 +22,40 @@ FUZZY_OCTO_DISCO_TIMEOUT_SECONDS = int(
 )
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 
-# TODO: use oauth everywhere
-# oauth_settings = OAuthSettings(
-#     client_id=os.environ.get("SLACK_CLIENT_ID"),
-#     client_secret=os.environ.get("SLACK_CLIENT_SECRET"),
-#     scopes=["app_mentions:read", "file:write", "file:read", "reactions:write"],
-#     installation_store=FileInstallationStore(base_dir="./data"),
-#     state_store=FileOAuthStateStore(expiration_seconds=600, base_dir="./data"),
-#     install_page_rendering_enabled=False,
-# )
-
-# # Initializes your app with your bot token and signing secret
-# app = App(
-#     signing_secret=os.environ.get("SLACK_SIGNING_SECRET"), oauth_settings=oauth_settings
-# )
-
-app = App(token=SLACK_BOT_TOKEN, signing_secret=os.environ.get("SLACK_SIGNING_SECRET"))
-app_handler = SlackRequestHandler(app)
-
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(level=LOG_LEVEL)
+
+if SLACK_BOT_TOKEN:
+    logging.info("using bot token")
+    app = App(
+        token=SLACK_BOT_TOKEN, signing_secret=os.environ.get("SLACK_SIGNING_SECRET")
+    )
+
+else:
+    logging.info("using oauth")
+    oauth_settings = OAuthSettings(
+        client_id=os.environ.get("SLACK_CLIENT_ID"),
+        client_secret=os.environ.get("SLACK_CLIENT_SECRET"),
+        scopes=[
+            "app_mentions:read",
+            "file:write",
+            "file:read",
+            "reactions:write",
+            "chat:write",
+        ],
+        installation_store=FileInstallationStore(base_dir="./data"),
+        state_store=FileOAuthStateStore(expiration_seconds=600, base_dir="./data"),
+        install_page_rendering_enabled=True,
+    )
+
+    # Initializes your app with your bot token and signing secret
+    app = App(
+        signing_secret=os.environ.get("SLACK_SIGNING_SECRET"),
+        oauth_settings=oauth_settings,
+    )
+
+app_handler = SlackRequestHandler(app)
+
 
 # TODO: add global error handler
 

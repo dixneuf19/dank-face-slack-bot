@@ -26,7 +26,7 @@ RUN apt-get update \
         build-essential
 
 # Install Poetry - respects $POETRY_VERSION & $POETRY_HOME
-ENV POETRY_VERSION=1.2.2
+ENV POETRY_VERSION=1.4.0
 RUN curl -sSL https://install.python-poetry.org | python3 -
 
 # We copy our Python requirements here to cache them
