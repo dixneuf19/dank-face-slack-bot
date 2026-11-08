@@ -1,12 +1,12 @@
 import logging
 import os
-from typing import Any
+from typing import Any, Callable
 
 import httpx
 from fastapi import FastAPI, Request, Response
 from path import Path
 from pydantic import ValidationError
-from slack_bolt import App
+from slack_bolt import App, BoltResponse
 from slack_bolt.adapter.fastapi import SlackRequestHandler
 from slack_bolt.context.ack import Ack
 from slack_bolt.oauth.oauth_settings import OAuthSettings
@@ -73,7 +73,9 @@ SUCCESS_EMOJI = "smiling_face_with_3_hearts"
 
 
 @app.middleware  # or app.use(log_request)
-def log_request(logger, body, next):
+def log_request(
+    logger: logging.Logger, body: dict[str, Any], next: Callable[[], BoltResponse]
+) -> BoltResponse:
     logger.debug(body)
     return next()
 
